@@ -1,6 +1,35 @@
-import React from "react";
+import Link from "next/link";
+import React, { useState } from "react";
 
 const signup = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rePassword, setRePassword] = useState("");
+  const conditionForSignup =
+    password === rePassword &&
+    name !== "" &&
+    email !== "" &&
+    password !== "" &&
+    rePassword !== "";
+  const creatingUser = async () => {
+    try {
+      if (conditionForSignup) {
+        const user = {
+          name: name,
+          email: email,
+          password: password,
+        };
+        const res = await fetch("http://localhost:8080/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(user),
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
   return (
     <div className={`flex min-h-screen`}>
       <div className="w-1/2 flex flex-col my-auto gap-8">
@@ -17,32 +46,42 @@ const signup = () => {
           </div>
           <div className="flex flex-col gap-4 items-center">
             <input
+              onChange={(e) => setName(e.target.value)}
+              className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
+              placeholder="Name"
+              type="text"
+            />
+            <input
+              onChange={(e) => setEmail(e.target.value)}
               className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
               placeholder="Email"
               type="text"
             />
             <input
+              onChange={(e) => setPassword(e.target.value)}
               className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
               placeholder="Password"
               type="text"
             />
             <input
+              onChange={(e) => setRePassword(e.target.value)}
               className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
-              placeholder="Email"
-              type="text"
-            />
-            <input
-              className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
-              placeholder="Password"
+              placeholder="Re-Password"
               type="text"
             />
           </div>
-          <button className="bg-blue-600 text-white w-72 h-12 rounded-2xl text-xl mx-auto">
+          <Link
+            href={"/options"}
+            onClick={creatingUser}
+            className="bg-blue-600 text-white w-72 h-12 rounded-2xl text-xl mx-auto flex justify-center items-center"
+          >
             Sign Up
-          </button>
+          </Link>
           <div className="flex gap-4 justify-center">
             <p className="text-gray-600">Already have an account?</p>
-            <button className="text-blue-500">Log In</button>
+            <Link href={"/signin"} className="text-blue-500">
+              Log In
+            </Link>
           </div>
         </div>
       </div>

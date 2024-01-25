@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 const login = () => {
@@ -32,7 +33,9 @@ const login = () => {
           </button>
           <div className="flex gap-4 justify-center">
             <p className="text-gray-600">Don't have an account?</p>
-            <button className="text-blue-500">Sign Up</button>
+            <Link href={"/signup"} className="text-blue-500">
+              Sign Up
+            </Link>
           </div>
         </div>
       </div>

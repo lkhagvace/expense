@@ -32,9 +32,21 @@ export const Recordform = () => {
               <select name="" id=""></select>
             </div>
           </div>
-          <button>Add Record</button>
+          <button className="w-64 h-8 text-white rounded-xl">Add Record</button>
         </div>
-        <div className="flex flex-col gap-8"></div>
+        <div className="flex flex-col gap-8 w-1/2">
+          <div className="flex flex-col">
+            <label>Payee</label>
+            <select></select>
+          </div>
+          <div className="flex flex-col">
+            <label>Note</label>
+            <input
+              placeholder="Write Here"
+              className="h-64 bg-gray-200 rounded-lg"
+            ></input>
+          </div>
+        </div>
       </div>
     </div>
   );
