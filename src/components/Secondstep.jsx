@@ -1,10 +1,10 @@
 import React from "react";
 import { Cash } from "@/svgs/Cash";
 
-export const Secondstep = () => {
+export const Secondstep = ({ setStep }) => {
   return (
     <div className="flex flex-col justify-center items-center gap-8 mx-auto my-auto">
-      <div className="bg-blue-600 w-12 flex justify-center items-center h-12 rounded-[50%]">
+      <div className="bg-[#114B5F] w-12 flex justify-center items-center h-12 rounded-[50%]">
         <Cash />
       </div>
       <p className="text-3xl font-bold">Set up your cash Balance</p>
@@ -16,7 +16,10 @@ export const Secondstep = () => {
       <p className="text-gray-500 mx-auto">
         How much cash do you have in your wallet?
       </p>
-      <button className="bg-blue-600 text-white w-72 h-12 rounded-2xl text-xl mx-auto">
+      <button
+        onClick={() => setStep(3)}
+        className="bg-[#114B5F] text-white w-72 h-12 rounded-2xl text-xl mx-auto"
+      >
         Confirm
       </button>
     </div>

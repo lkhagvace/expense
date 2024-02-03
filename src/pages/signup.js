@@ -6,6 +6,7 @@ const signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rePassword, setRePassword] = useState("");
+  const [readyToGoOption, setReadyToGoOption] = useState(false);
   const conditionForSignup =
     password === rePassword &&
     name !== "" &&
@@ -13,29 +14,37 @@ const signup = () => {
     password !== "" &&
     rePassword !== "";
   const creatingUser = async () => {
-    try {
-      if (conditionForSignup) {
-        const user = {
-          name: name,
-          email: email,
-          password: password,
-        };
-        const res = await fetch("http://localhost:8080/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(user),
-        });
+    if (conditionForSignup) {
+      if (email.includes("@gmail.com")) {
+        try {
+          setReadyToGoOption(true);
+          const user = {
+            name: name,
+            email: email,
+            password: password,
+          };
+          const res = await fetch("http://localhost:8080/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(user),
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      } else {
+        alert("Wrong Email");
       }
-    } catch (error) {
-      console.error(error);
+    } else {
+      alert("Fill the all input or Password invalid");
     }
   };
+  console.log(readyToGoOption);
   return (
     <div className={`flex min-h-screen`}>
       <div className="w-1/2 flex flex-col my-auto gap-8">
         <div className="flex flex-col w-full h-full m-auto py-auto gap-8">
           <div className="flex justify-center items-center gap-6">
-            <img src="./mylogo.png" className="w-16 h-16" />
+            <img src="./mylogo.png" className="w-16 h-16 rounded-[50%]" />
             <p className="font-bold text-2xl">AceArea</p>
           </div>
           <div className="flex flex-col items-center">
@@ -71,21 +80,21 @@ const signup = () => {
             />
           </div>
           <Link
-            href={"/options"}
+            href={`${readyToGoOption === true ? "/options" : "/signup"}`}
             onClick={creatingUser}
-            className="bg-blue-600 text-white w-72 h-12 rounded-2xl text-xl mx-auto flex justify-center items-center"
+            className="bg-[#114B5F] text-white w-72 h-12 rounded-2xl text-xl mx-auto flex justify-center items-center"
           >
             Sign Up
           </Link>
           <div className="flex gap-4 justify-center">
             <p className="text-gray-600">Already have an account?</p>
-            <Link href={"/signin"} className="text-blue-500">
+            <Link href={"/"} className="text-[#114B5F]">
               Log In
             </Link>
           </div>
         </div>
       </div>
-      <div className="bg-blue-600 w-1/2"></div>
+      <div className="bg-[#114B5F] w-1/2"></div>
     </div>
   );
 };
