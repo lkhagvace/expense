@@ -2,16 +2,19 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
+import { instance } from "@/components/Instance";
+import { array } from "yup";
 const profile = () => {
   const router = useRouter();
   const [user, setUser] = useState({});
+  const [img, setImg] = useState();
   const getUserInfo = async () => {
     const token = localStorage.getItem("authToken");
     if (!token) {
       return router.push("/signin");
     }
     const loggedUser = jwtDecode(token);
-    const res = await axios.get("http://localhost:8080/getUser", {
+    const res = await instance.get("/getUser", {
       headers: { Authorization: `Bearer ${token}` },
     });
     const usersData = res.data;
@@ -24,7 +27,7 @@ const profile = () => {
       if (!token) {
         return router.push("/signin");
       }
-      const res = await axios.get("http://localhost:8080/check", {
+      const res = await instance.get("/check", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 200) {
@@ -42,6 +45,24 @@ const profile = () => {
       router.push("/signin");
     } catch (error) {
       console.error(error);
+    }
+  };
+  const imageUpload = async (src) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const source = URL.createObjectURL(src);
+      const userId = user.id;
+      console.log(typeof new ArrayBuffer(source));
+      const res = await axios.post(
+        "http://localhost:8080/upload",
+        { source: new ArrayBuffer(source), userId: userId },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      console.log("response: ", res.data);
+    } catch (error) {
+      console.error("erroor in image upload: ", error);
     }
   };
   useEffect(() => {
@@ -64,7 +85,15 @@ const profile = () => {
       >
         Sign Out
       </button>
-      <img src="./mylogo.png" className="rounded-[50%] w-2/5" />
+      <div className="flex flex-col gap-4 w-2/5">
+        <input
+          type="file"
+          onChange={(e) => {
+            imageUpload(e.target.files[0]);
+          }}
+        />
+        <img src={`${img}`} className="rounded-3xl" />
+      </div>
       <div className="w-2/5 bg-gray-300">
         <p className="font-semibold text-2xl">
           Name:

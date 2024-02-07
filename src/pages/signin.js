@@ -1,10 +1,33 @@
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useRouter } from "next/router";
+import { signinUserSchema } from "@/Validations/SigninUserValidation";
+import { createContext } from "react";
+import { instance } from "@/components/Instance";
+export const TokenContext = createContext();
+export const Token = ({ children }) => {
+  const [token, setToken] = useState("");
+  return (
+    <TokenContext.Provider value={{ token, setToken }}>
+      {children}
+    </TokenContext.Provider>
+  );
+};
 const login = () => {
+  const { token, setToken } = useContext(TokenContext);
   const router = useRouter();
+  const isThereToken = () => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      return router.push("/dashboard");
+    }
+  };
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    isThereToken();
+  }, []);
 
   const signin = async () => {
     if (email && password) {
@@ -13,14 +36,15 @@ const login = () => {
           email: email,
           password: password,
         };
-        const res = await fetch("http://localhost:8080/signin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(user),
-        });
-        const data = await res.json();
+        const isValid = await signinUserSchema.isValid(user);
+        if (isValid === false) {
+          return alert("Not Validable");
+        }
+        const res = await instance.post("/signin", user);
+        const data = await res.data;
         if (res.status === 201) {
           const token = data.token;
+          setToken(token);
           router.push("/dashboard");
           return localStorage.setItem("authToken", token);
         }
@@ -32,6 +56,10 @@ const login = () => {
       }
     }
   };
+  useEffect(() => {
+    setToken(localStorage.getItem("authToken"));
+    console.log("token in signin", token);
+  }, [token]);
   return (
     <div className="flex justify-center min-h-screen">
       <div className="w-1/2 flex flex-col my-auto gap-8">

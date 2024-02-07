@@ -1,18 +1,35 @@
 import React, { useState } from "react";
+import { useRouter } from "next/router";
 import { Home } from "@/svgs/Home";
+import { jwtDecode } from "jwt-decode";
+import { useContext } from "react";
+import { VisibleCategoryContext } from "@/context/VisibleCategory";
 
-export const Addcategory = ({ close }) => {
+export const Addcategory = () => {
+  const router = useRouter();
+  const { isCategorybarVisible, setIsCategorybarVisible } = useContext(
+    VisibleCategoryContext
+  );
   const [categoryimg, setCategoryimg] = useState("");
   const [name, setName] = useState("");
   const addingCategory = async () => {
     try {
+      const token = localStorage.getItem("authToken");
+      const decoded = jwtDecode(token);
+      if (!token) {
+        router.push("/signin");
+      }
       const newCategory = {
         categoryimg: categoryimg,
         name: name,
+        userId: decoded.id,
       };
       const res = await fetch("http://localhost:8080/category", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(newCategory),
       });
     } catch (error) {
@@ -22,8 +39,14 @@ export const Addcategory = ({ close }) => {
   return (
     <div className="flex flex-col w-full rounded-lg p-8">
       <div className="flex justify-between items-center mt-4 ml-8 gap-4 mb-4">
-        <p className="text-lg font-semibold">Add Record</p>
-        <button onClick={() => close(false)}>x</button>
+        <p className="text-lg font-semibold">Add Category</p>
+        <button
+          onClick={() => {
+            setIsCategorybarVisible(false);
+          }}
+        >
+          x
+        </button>
       </div>
       <hr></hr>
       <div className="flex justify-between my-4">
@@ -31,7 +54,7 @@ export const Addcategory = ({ close }) => {
           onChange={(e) => {
             setCategoryimg(e.target.value);
           }}
-          className=" flex justify-center items-center rounded-lg w-1/6 border-2 border-solid border-gray-600 h-12"
+          className=" flex justify-center items-center rounded-lg w-1/6 border-2 border-solid bg-white border-gray-600 h-12"
         >
           <option>&#127851;</option>
           <option>&#127968;</option>
@@ -42,14 +65,14 @@ export const Addcategory = ({ close }) => {
         </select>
         <input
           onChange={(e) => setName(e.target.value)}
-          className="rounded-lg w-4/5 border-2 border-solid border-gray-600 h-12 text-gray-600"
+          className="rounded-lg w-4/5 border-2 border-solid border-gray-600 h-12 bg-white text-black"
           placeholder="Name"
         />
       </div>
       <button
         onClick={() => {
           addingCategory();
-          close(false);
+          setIsCategorybarVisible(false);
         }}
         className="w-full bg-green-600 rounded-lg text-white h-12"
       >

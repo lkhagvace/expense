@@ -7,38 +7,50 @@ import { useContext, useEffect } from "react";
 import { isRecordBarVisibleContext } from "@/context/Visible";
 import { useRouter } from "next/router";
 import { jwtDecode } from "jwt-decode";
-import axios from "axios";
-import { CategoryContext } from "@/context/Category";
+import { BarChart } from "@/charts/BarChart";
+import { PieChart } from "@/charts/PieChart";
+import { instance } from "@/components/Instance";
+import { TokenContext } from "./signin";
 
 export default function Dashboard() {
   const router = useRouter();
   const { isRecordBarVisible, setIsRecordBarVisible } = useContext(
     isRecordBarVisibleContext
   );
-  const { categoryData, setCategoryData } = useContext(CategoryContext);
-  const [transactionData, setTransactionData] = useState([]);
-  const [expense, setExpense] = useState([]);
-  const [income, setIncome] = useState([]);
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [totalExpense, setTotalExpense] = useState(0);
+  let [transactionData, setTransactionData] = useState([]);
   const [total, setTotal] = useState(0);
   const [user, setUser] = useState({});
+  const [categoryData, setCategoryData] = useState([]);
+  let visibleCategoryData = [];
   const isTokenNull = (token) => {
     if (!token) {
       return router.push("/signin");
+    }
+  };
+  const gettingBankBalance = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      isTokenNull(token);
+      const decoded = jwtDecode(token);
+      const res = await instance.get("/getBankBalance", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTotal(res.data.find((user) => user.id === decoded.id).bankbalance);
+    } catch (error) {
+      console.error(error);
     }
   };
   const fetchingTransactions = async () => {
     try {
       const token = localStorage.getItem("authToken");
       isTokenNull(token);
-      setUser(jwtDecode(token));
-      const res = await axios.get("http://localhost:8080/gettingTransaction", {
+      const decoded = jwtDecode(token);
+      setUser(decoded);
+      const res = await instance.get("/gettingTransaction", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 202) {
-        const transactionData = await res.data;
-        setTransactionData(transactionData);
+        setTransactionData(res.data);
       } else {
         router.push("/signin");
       }
@@ -51,12 +63,14 @@ export default function Dashboard() {
       const token = localStorage.getItem("authToken");
       isTokenNull(token);
       setUser(jwtDecode(token));
-      const res = await axios.get("http://localhost:8080/categories", {
+      const res = await instance.get("/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 202) {
-        const categoryData = await res.data;
-        setCategoryData(categoryData);
+        const allCategoryData = await res.data;
+        setCategoryData(
+          allCategoryData.filter((el) => el.userid === decoded.id)
+        );
       } else {
         router.push("/signin");
       }
@@ -64,33 +78,46 @@ export default function Dashboard() {
       console.error(error);
     }
   };
+
+  transactionData = transactionData.filter((el) => el.userid === user.id);
+
+  const counter = useMemo(() => {
+    const income = transactionData.filter(
+      (data) => data.transactiontype === "INC"
+    );
+    const expense = transactionData.filter(
+      (data) => data.transactiontype === "EXP"
+    );
+    const totalAmount =
+      total +
+      income.reduce((acc, cur) => acc + cur.amount, 0) -
+      expense.reduce((acc, cur) => acc + cur.amount, 0);
+    console.log(totalAmount);
+  }, [transactionData]);
   useEffect(() => {
     fetchingCategories();
     fetchingTransactions();
   }, []);
-
-  const visibleCategoryData = categoryData;
-  const visibleTransactionData = transactionData.filter(
-    (el) => el.userid === user.id
-  );
-
-  const counter = useMemo(() => {
-    setExpense(
-      visibleTransactionData.filter((el) => el.transactiontype === "EXP")
-    );
-    setIncome(
-      visibleTransactionData.filter((el) => el.transactiontype === "INC")
-    );
-    const expenseCashBalance = expense.reduce(
-      (acc, cur) => acc + cur.amount,
-      0
-    );
-    const incomeCashBalace = income.reduce((acc, cur) => acc + cur.amount, 0);
-    const Total = incomeCashBalace - expenseCashBalance;
-    setTotalIncome(incomeCashBalace);
-    setTotalExpense(expenseCashBalance);
-    setTotal(Total);
-  }, [transactionData]);
+  const [transactionChartData, setTransactionChartData] = useState({
+    labels: transactionData.map((data) => data.transactiontype),
+    datasets: [
+      {
+        label: "Amount",
+        data: transactionData.map((data) => data.amount),
+        backgroundColor: ["#114B5F", "red", "yellow", "brown"],
+      },
+    ],
+  });
+  // const [categoryChartData, setCategoryChartData] = useState({
+  //   labels: transactionData.map((data) => data.categoryname),
+  //   datasets: [
+  //     {
+  //       label: "Amount",
+  //       data: transactionData.map((data) => data.amount),
+  //       backgroundColor: ["#114B5F", "red", "yellow", "brown"],
+  //     },
+  //   ],
+  // });
   return (
     <main className="flex flex-col items-center min-h-screen bg-gray-200">
       <Header />
@@ -121,7 +148,7 @@ export default function Dashboard() {
           </div>
           <hr></hr>
           <div className="ml-8 flex flex-col justify-center, mt-8 my-8">
-            <p className="text-3xl font-bold text-green-500">{totalIncome}</p>
+            <p className="text-3xl font-bold text-green-500">{}</p>
             <p className="text-gray-500 text-lg">Your Income Amount</p>
           </div>
           <div className="flex ml-8">
@@ -136,7 +163,7 @@ export default function Dashboard() {
           </div>
           <hr></hr>
           <div className="ml-8 flex flex-col justify-center, mt-8 my-8">
-            <p className="text-3xl font-bold text-red-500">- {totalExpense}</p>
+            <p className="text-3xl font-bold text-red-500">- {}</p>
             <p className="text-gray-500 text-lg">Your Income Amount</p>
           </div>
           <div className="flex ml-8">
@@ -151,6 +178,9 @@ export default function Dashboard() {
             <p className="text-lg font-semibold">Income - Expense</p>
           </div>
           <hr></hr>
+          <div className="w-96 h-full">
+            <BarChart chartData={transactionChartData} />
+          </div>
         </div>
         <div className="w-5/12 bg-white h-64 rounded-2xl">
           <div className="flex justify-between items-center mt-4 ml-8 gap-4 mb-4 mr-4">
@@ -158,21 +188,31 @@ export default function Dashboard() {
             <p className="text-gray-300">Jun 1 - Nov 30</p>
           </div>
           <hr></hr>
+          <div className="w-48 h-48">{/* <PieChart chartData={} /> */}</div>
         </div>
       </div>
       <div className="flex flex-col gap-4 mt-4 w-11/12 bg-white pl-8 rounded-2xl">
         <p className="text-2xl font-semibold mt-4">Last Records</p>
         <hr></hr>
-        <div className="flex flex-col justify-between items-center bg-white rounded-lg">
-          {visibleTransactionData &&
-            visibleTransactionData.map((transaction) => {
+        <div className="flex flex-col w-full h-fit mt-0 rounded-lg gap-4">
+          {transactionData.length == 0 ? (
+            <p className="bg-red-400 h-8 w-64 flex justify-center items-center m-auto text-white rounded-xl">
+              There is no any TRANSACTION !!!
+            </p>
+          ) : (
+            transactionData.map((transaction) => {
               return (
-                <div className="flex w-full justify-between">
-                  <div className="flex gap-8">
-                    <div className="w-16 h-16">{transaction.categoryimg}</div>
-                    <p className="text-xl font-bold">
-                      {transaction.categoryname}
-                    </p>
+                <div className="flex w-full justify-between py-4 px-4 rounded-lg bg-white items-center m-ato">
+                  <div className="flex gap-8 justify-center items-center">
+                    <div className="flex justify-center items-center">
+                      <div className="bg-blue-400 w-8 h-8 rounded-[50%] flex justify-center items-center">
+                        {transaction.categoryimg}
+                      </div>
+                    </div>
+                    <div className="text-xl font-bold flex flex-col justify-center items-center">
+                      <p>{transaction.categoryname}</p>
+                      <div>{transaction.createdAt}</div>
+                    </div>
                   </div>
                   <p
                     className={`pr-8 font-semibold text-lg ${
@@ -185,7 +225,8 @@ export default function Dashboard() {
                   </p>
                 </div>
               );
-            })}
+            })
+          )}
         </div>
       </div>
     </main>

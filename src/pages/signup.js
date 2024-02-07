@@ -1,33 +1,47 @@
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { useContext } from "react";
+import { UserContext } from "@/context/User";
+import { signupUserSchema } from "@/Validations/SignupUserValidation";
 
 const signup = () => {
+  const router = useRouter();
+  const isThereToken = () => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      return router.push("/dashboard");
+    }
+  };
+  const { newUser, setNewUser } = useContext(UserContext);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rePassword, setRePassword] = useState("");
-  const [readyToGoOption, setReadyToGoOption] = useState(false);
   const conditionForSignup =
     password === rePassword &&
     name !== "" &&
     email !== "" &&
     password !== "" &&
     rePassword !== "";
+  useEffect(() => {
+    isThereToken();
+  }, []);
   const creatingUser = async () => {
     if (conditionForSignup) {
       if (email.includes("@gmail.com")) {
         try {
-          setReadyToGoOption(true);
           const user = {
             name: name,
             email: email,
             password: password,
           };
-          const res = await fetch("http://localhost:8080/signup", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(user),
-          });
+          const isValid = signupUserSchema.isValid(user);
+          if (isValid === false) {
+            return alert("NOT VALID");
+          }
+          setNewUser(user);
+          router.push("/options");
         } catch (error) {
           console.error(error);
         }
@@ -38,7 +52,6 @@ const signup = () => {
       alert("Fill the all input or Password invalid");
     }
   };
-  console.log(readyToGoOption);
   return (
     <div className={`flex min-h-screen`}>
       <div className="w-1/2 flex flex-col my-auto gap-8">
@@ -79,13 +92,12 @@ const signup = () => {
               type="text"
             />
           </div>
-          <Link
-            href={`${readyToGoOption === true ? "/options" : "/signup"}`}
+          <button
             onClick={creatingUser}
             className="bg-[#114B5F] text-white w-72 h-12 rounded-2xl text-xl mx-auto flex justify-center items-center"
           >
             Sign Up
-          </Link>
+          </button>
           <div className="flex gap-4 justify-center">
             <p className="text-gray-600">Already have an account?</p>
             <Link href={"/"} className="text-[#114B5F]">

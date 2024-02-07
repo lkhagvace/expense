@@ -31,7 +31,11 @@ export const Header = () => {
   return (
     <div className="flex justify-between w-full items-center pt-4 bg-white pb-4">
       <nav className="flex gap-8 justify-center items-center ml-16">
-        <img src="./mylogo.png" className="w-16 h-16 rounded-[50%]" />
+        <img
+          onClick={() => router.push("/dashboard")}
+          src="./mylogo.png"
+          className="w-16 h-16 rounded-[50%]"
+        />
         <button
           id="dashboard"
           onClick={(e) => {

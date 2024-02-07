@@ -2,13 +2,16 @@ import React, { useEffect, useState } from "react";
 import { useContext } from "react";
 import { isRecordBarVisibleContext } from "@/context/Visible";
 import { jwtDecode } from "jwt-decode";
-import axios from "axios";
 import { useRouter } from "next/router";
-import { CategoryContext } from "@/context/Category";
+import { Addcategory } from "./Addcategory";
+import { VisibleCategoryContext } from "@/context/VisibleCategory";
+import { instance } from "@/components/Instance";
 
 export const Recordform = () => {
   const router = useRouter();
-  const { categoryData, setCategoryData } = useContext(CategoryContext);
+  const { isCategorybarVisible, setIsCategorybarVisible } = useContext(
+    VisibleCategoryContext
+  );
   const [howMuch, setHowMuch] = useState(0);
   const [description, setDescription] = useState("");
   const [transactionType, setTransactionType] = useState(false);
@@ -16,15 +19,24 @@ export const Recordform = () => {
   const { isRecordBarVisible, setIsRecordBarVisible } = useContext(
     isRecordBarVisibleContext
   );
+  const [categoryData, setCategoryData] = useState([]);
+  const fetchCategory = async () => {
+    try {
+      const res = await instance.get("/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCategoryData(res.data);
+    } catch (error) {}
+  };
   let expenseOrIncome = "";
   const addRecord = async () => {
+    setIsRecordBarVisible(false);
     const token = localStorage.getItem("authToken");
     if (!token) {
       return router.push("/signin");
     }
     const decoded = jwtDecode(token);
     const user = decoded;
-    setIsRecordBarVisible(false);
     if (howMuch && description) {
       try {
         if (transactionType === false) {
@@ -32,7 +44,7 @@ export const Recordform = () => {
         } else {
           expenseOrIncome = "INC";
         }
-        const cat = categoryData.filter(
+        const cat = categoryData.find(
           (category) => category.name === selectedCategory
         );
         const transaction = {
@@ -40,14 +52,14 @@ export const Recordform = () => {
           description: description,
           transactionType: expenseOrIncome,
           userId: user.id,
-          categoryId: cat[0].id,
-          categoryimg: cat[0].categoryimg,
-          categoryname: cat[0].name,
+          categoryId: cat.id,
+          categoryimg: cat.categoryimg,
+          categoryname: cat.name,
         };
-        const res = await fetch("http://localhost:8080/creatingTransaction", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(transaction),
+        const res = await instance.post("/creatingTransaction", transaction, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
       } catch (error) {
         console.error("error: ", error);
@@ -56,6 +68,11 @@ export const Recordform = () => {
   };
   return (
     <div className="w-2/5 bg-gray-100 rounded-xl px-4 absolute mx-auto my-auto py-4 m-auto">
+      {isCategorybarVisible === true && (
+        <div className="absolute z-2 w-full h-fit bg-white m-auto flex justify-center items-center">
+          <Addcategory />
+        </div>
+      )}
       <div className="flex justify-between items-center mt-4 ml-8 gap-4 mb-4">
         <p className="text-lg font-semibold">Add Record</p>
         <button
@@ -74,8 +91,10 @@ export const Recordform = () => {
               onClick={() => {
                 setTransactionType(false);
               }}
-              className={`text-white rounded-lg w-48 h-8 ${
-                transactionType === false ? "bg-[#114B5F]" : "text-black"
+              className={`rounded-lg w-48 h-8 ${
+                transactionType === false
+                  ? "bg-[#114B5F] text-white"
+                  : "text-black"
               }`}
             >
               Expense
@@ -84,7 +103,7 @@ export const Recordform = () => {
               onClick={() => {
                 setTransactionType(true);
               }}
-              className={`text-white rounded-lg w-48 h-8 ${
+              className={`rounded-lg w-48 h-8 ${
                 transactionType === true
                   ? "bg-green-600 text-white"
                   : "text-black"
@@ -99,25 +118,35 @@ export const Recordform = () => {
             className="bg-gray-200 h-16 rounded-xl pl-4"
             onChange={(e) => setHowMuch(e.target.value)}
           />
-          <div className="flex flex-col">
-            <label>Category</label>
-            <select
-              onChange={(e) => {
-                setSelectedCategory(e.target.value);
-              }}
-              className="w-full h-12 rounded-xl bg-gray-200"
+
+          {categoryData.length == 0 ? (
+            <button
+              onClick={() => setIsCategorybarVisible(true)}
+              className="flex flex-col justify-center items-center bg-[#114B5F] text-white h-8 rounded-lg"
             >
-              {categoryData &&
-                categoryData.map((record) => {
-                  return (
-                    <option>
-                      {/* <p>{record.categoryImg}</p> */}
-                      <p>{record.name}</p>
-                    </option>
-                  );
-                })}
-            </select>
-          </div>
+              + Add Category
+            </button>
+          ) : (
+            <div className="flex flex-col">
+              <label>Category</label>
+              <select
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                }}
+                className="w-full h-12 rounded-xl bg-gray-200"
+              >
+                {categoryData &&
+                  categoryData.map((record) => {
+                    return (
+                      <option>
+                        <p>{record.name}</p>
+                      </option>
+                    );
+                  })}
+              </select>
+            </div>
+          )}
+
           <div className="flex justify-between">
             <div className="flex flex-col">
               <label>Date</label>

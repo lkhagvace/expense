@@ -17,10 +17,14 @@ export default function Home() {
       if (res.status === 200) {
         router.push("/dashboard");
       } else {
-        router.push("/signin");
+        console.log(res);
+        return router.push("/signin");
       }
     } catch (error) {
-      console.error(error);
+      if (error.response.status === 403) {
+        return localStorage.removeItem("authToken");
+      }
+      console.error("error :", error);
     }
   };
   useEffect(() => {
