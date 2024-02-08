@@ -1,9 +1,10 @@
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useContext } from "react";
 import { UserContext } from "@/context/User";
 import { signupUserSchema } from "@/Validations/SignupUserValidation";
+import { useFormik } from "formik";
 
 const signup = () => {
   const router = useRouter();
@@ -14,42 +15,39 @@ const signup = () => {
     }
   };
   const { newUser, setNewUser } = useContext(UserContext);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rePassword, setRePassword] = useState("");
-  const conditionForSignup =
-    password === rePassword &&
-    name !== "" &&
-    email !== "" &&
-    password !== "" &&
-    rePassword !== "";
   useEffect(() => {
     isThereToken();
   }, []);
+
+  const { values, errors, handleBlur, handleChange, handleSubmit } = useFormik({
+    initialValues: {
+      email: "",
+      name: "",
+      password: "",
+      confirmPassword: "",
+    },
+    validationSchema: signupUserSchema,
+  });
   const creatingUser = async () => {
-    if (conditionForSignup) {
-      if (email.includes("@gmail.com")) {
-        try {
-          const user = {
-            name: name,
-            email: email,
-            password: password,
-          };
-          const isValid = signupUserSchema.isValid(user);
-          if (isValid === false) {
-            return alert("NOT VALID");
-          }
-          setNewUser(user);
-          router.push("/options");
-        } catch (error) {
-          console.error(error);
-        }
-      } else {
-        alert("Wrong Email");
+    if (
+      errors.name === undefined &&
+      errors.email === undefined &&
+      errors.password === undefined &&
+      errors.confirmPassword === undefined
+    ) {
+      try {
+        const user = {
+          name: values.name,
+          email: values.email,
+          password: values.password,
+        };
+        setNewUser(user);
+        router.push("/options");
+      } catch (error) {
+        console.error(error);
       }
     } else {
-      alert("Fill the all input or Password invalid");
+      alert("Not Valid!");
     }
   };
   return (
@@ -66,34 +64,79 @@ const signup = () => {
               Sign up below to create your Wallet account
             </p>
           </div>
-          <div className="flex flex-col gap-4 items-center">
-            <input
-              onChange={(e) => setName(e.target.value)}
-              className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
-              placeholder="Name"
-              type="text"
-            />
-            <input
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
-              placeholder="Email"
-              type="text"
-            />
-            <input
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
-              placeholder="Password"
-              type="text"
-            />
-            <input
-              onChange={(e) => setRePassword(e.target.value)}
-              className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
-              placeholder="Re-Password"
-              type="text"
-            />
-          </div>
+          <form className="flex flex-col gap-4 items-center">
+            <div className="flex w-full flex-col items-center h-20">
+              <input
+                id="name"
+                value={values.name}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4 ${
+                  errors.name ? "border-red-500" : "border-blue-500"
+                }`}
+                placeholder="Name"
+                type="text"
+              />
+              {errors.name ? (
+                <p className="w-72 text-red-500 text-lg">{errors.name}</p>
+              ) : null}
+            </div>
+            <div className="flex w-full flex-col items-center h-20">
+              <input
+                id="email"
+                value={values.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4 ${
+                  errors.email ? "border-red-500" : "border-blue-500"
+                }`}
+                placeholder="Email"
+                type="text"
+              />
+              {errors.email ? (
+                <p className="w-72 text-red-500 text-lg">{errors.email}</p>
+              ) : null}
+            </div>
+            <div className="flex w-full flex-col items-center h-20">
+              <input
+                id="password"
+                value={values.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4 ${
+                  errors.password ? "border-red-500" : "border-blue-500"
+                }`}
+                placeholder="Password"
+                type="text"
+              />
+              {errors.password ? (
+                <p className="w-72 text-red-500 text-lg">{errors.password}</p>
+              ) : null}
+            </div>
+            <div className="flex w-full flex-col items-center h-20">
+              <input
+                id="confirmPassword"
+                value={values.confirmPassword}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4 ${
+                  errors.confirmPassword ? "border-red-500" : "border-blue-500"
+                }`}
+                placeholder="Re-Password"
+                type="text"
+              />
+              {errors.confirmPassword ? (
+                <p className="w-72 text-red-500 text-lg">
+                  {errors.confirmPassword}
+                </p>
+              ) : null}
+            </div>
+          </form>
           <button
-            onClick={creatingUser}
+            onClick={() => {
+              handleSubmit();
+              creatingUser();
+            }}
             className="bg-[#114B5F] text-white w-72 h-12 rounded-2xl text-xl mx-auto flex justify-center items-center"
           >
             Sign Up

@@ -6,39 +6,54 @@ import { useRouter } from "next/router";
 import { Addcategory } from "./Addcategory";
 import { VisibleCategoryContext } from "@/context/VisibleCategory";
 import { instance } from "@/components/Instance";
+import { useFormik } from "formik";
+import { recordSchema } from "@/Validations/recorValidation";
 
 export const Recordform = () => {
   const router = useRouter();
   const { isCategorybarVisible, setIsCategorybarVisible } = useContext(
     VisibleCategoryContext
   );
-  const [howMuch, setHowMuch] = useState(0);
-  const [description, setDescription] = useState("");
   const [transactionType, setTransactionType] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
   const { isRecordBarVisible, setIsRecordBarVisible } = useContext(
     isRecordBarVisibleContext
   );
   const [categoryData, setCategoryData] = useState([]);
-  const fetchCategory = async () => {
+  const fetchCategory = async (token) => {
     try {
+      const decoded = jwtDecode(token);
       const res = await instance.get("/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setCategoryData(res.data);
-    } catch (error) {}
+      setCategoryData(res.data.filter((el) => el.userid === decoded.id));
+    } catch (error) {
+      console.error("error in record form category data: ", error);
+    }
   };
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    fetchCategory(token);
+  }, []);
   let expenseOrIncome = "";
+
+  const { values, errors, handleBlur, handleChange, handleSubmit } = useFormik({
+    initialValues: {
+      amount: "",
+      description: "",
+    },
+    validationSchema: recordSchema,
+  });
   const addRecord = async () => {
-    setIsRecordBarVisible(false);
     const token = localStorage.getItem("authToken");
     if (!token) {
       return router.push("/signin");
     }
     const decoded = jwtDecode(token);
     const user = decoded;
-    if (howMuch && description) {
+    if (errors.amount === undefined && errors.description === undefined) {
       try {
+        setIsRecordBarVisible(false);
         if (transactionType === false) {
           expenseOrIncome = "EXP";
         } else {
@@ -48,8 +63,8 @@ export const Recordform = () => {
           (category) => category.name === selectedCategory
         );
         const transaction = {
-          amount: Number(howMuch),
-          description: description,
+          amount: Number(values.amount),
+          description: values.description,
           transactionType: expenseOrIncome,
           userId: user.id,
           categoryId: cat.id,
@@ -66,6 +81,7 @@ export const Recordform = () => {
       }
     }
   };
+  console.log(errors);
   return (
     <div className="w-2/5 bg-gray-100 rounded-xl px-4 absolute mx-auto my-auto py-4 m-auto">
       {isCategorybarVisible === true && (
@@ -114,9 +130,14 @@ export const Recordform = () => {
           </div>
           <input
             type="number"
+            id="amount"
+            value={values.amount}
+            onChange={handleChange}
+            onBlur={handleBlur}
             placeholder="000,00"
-            className="bg-gray-200 h-16 rounded-xl pl-4"
-            onChange={(e) => setHowMuch(e.target.value)}
+            className={`bg-gray-200 h-16 rounded-xl pl-4 ${
+              errors.amount ? "border-2 border-solid border-red-400" : null
+            }`}
           />
 
           {categoryData.length == 0 ? (
@@ -190,9 +211,16 @@ export const Recordform = () => {
           <div className="flex flex-col">
             <label>Note</label>
             <input
-              onChange={(e) => setDescription(e.target.value)}
+              id="description"
+              value={values.description}
+              onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Write Here"
-              className="h-64 bg-gray-200 rounded-lg"
+              className={`h-64 bg-gray-200 rounded-lg ${
+                errors.description
+                  ? "border-2 border-solid border-red-500"
+                  : null
+              }`}
             ></input>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { signinUserSchema } from "@/Validations/SigninUserValidation";
 import { createContext } from "react";
 import { instance } from "@/components/Instance";
+import { useFormik } from "formik";
 export const TokenContext = createContext();
 export const Token = ({ children }) => {
   const [token, setToken] = useState("");
@@ -29,17 +30,21 @@ const login = () => {
     isThereToken();
   }, []);
 
+  const { values, errors, handleBlur, handleChange, handleSubmit } = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validationSchema: signinUserSchema,
+  });
+
   const signin = async () => {
-    if (email && password) {
+    if (errors.email === undefined && errors.password === undefined) {
       try {
         const user = {
-          email: email,
-          password: password,
+          email: values.email,
+          password: values.password,
         };
-        const isValid = await signinUserSchema.isValid(user);
-        if (isValid === false) {
-          return alert("Not Validable");
-        }
         const res = await instance.post("/signin", user);
         const data = await res.data;
         if (res.status === 201) {
@@ -58,7 +63,6 @@ const login = () => {
   };
   useEffect(() => {
     setToken(localStorage.getItem("authToken"));
-    console.log("token in signin", token);
   }, [token]);
   return (
     <div className="flex justify-center min-h-screen">
@@ -75,23 +79,43 @@ const login = () => {
             </p>
           </div>
           <div className="flex flex-col gap-4 items-center">
-            <input
-              className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
-              placeholder="Email"
-              type="text"
-              onChange={(e) => {
-                setEmail(e.target.value);
-              }}
-            />
-            <input
-              className="bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4"
-              placeholder="Password"
-              type="text"
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="flex w-full flex-col items-center h-20">
+              <input
+                id="email"
+                value={values.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4 ${
+                  errors.email ? "border-red-500" : "border-blue-500"
+                }`}
+                placeholder="Email"
+                type="text"
+              />
+              {errors.email ? (
+                <p className="w-72 text-red-500 text-lg">{errors.email}</p>
+              ) : null}
+            </div>
+            <div className="flex w-full flex-col items-center h-20">
+              <input
+                id="password"
+                value={values.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`bg-gray-100 border-solid border-2 border-gray-300 w-72 h-12 rounded-xl pl-4 ${
+                  errors.password ? "border-red-500" : "border-blue-500"
+                }`}
+                placeholder="Password"
+                type="text"
+              />
+              {errors.password ? (
+                <p className="w-72 text-red-500 text-lg">{errors.password}</p>
+              ) : null}
+            </div>
           </div>
           <button
-            onClick={signin}
+            onClick={() => {
+              handleSubmit(), signin();
+            }}
             className="bg-[#114B5F] text-white w-72 h-12 rounded-2xl text-xl mx-auto"
           >
             Log In

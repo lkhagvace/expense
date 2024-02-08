@@ -10,7 +10,6 @@ import { jwtDecode } from "jwt-decode";
 import { BarChart } from "@/charts/BarChart";
 import { PieChart } from "@/charts/PieChart";
 import { instance } from "@/components/Instance";
-import { TokenContext } from "./signin";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -19,17 +18,17 @@ export default function Dashboard() {
   );
   let [transactionData, setTransactionData] = useState([]);
   const [total, setTotal] = useState(0);
+  const [income, setIncome] = useState(0);
+  const [expense, setExpense] = useState(0);
   const [user, setUser] = useState({});
-  const [categoryData, setCategoryData] = useState([]);
-  let visibleCategoryData = [];
+  let [chartData, setChartData] = useState([]);
   const isTokenNull = (token) => {
     if (!token) {
       return router.push("/signin");
     }
   };
-  const gettingBankBalance = async () => {
+  const gettingBankBalance = async (token) => {
     try {
-      const token = localStorage.getItem("authToken");
       isTokenNull(token);
       const decoded = jwtDecode(token);
       const res = await instance.get("/getBankBalance", {
@@ -40,9 +39,12 @@ export default function Dashboard() {
       console.error(error);
     }
   };
-  const fetchingTransactions = async () => {
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    gettingBankBalance(token);
+  }, []);
+  const fetchingTransactions = async (token) => {
     try {
-      const token = localStorage.getItem("authToken");
       isTokenNull(token);
       const decoded = jwtDecode(token);
       setUser(decoded);
@@ -50,7 +52,7 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 202) {
-        setTransactionData(res.data);
+        setTransactionData(res.data.filter((el) => el.userid === decoded.id));
       } else {
         router.push("/signin");
       }
@@ -58,28 +60,10 @@ export default function Dashboard() {
       console.error(error);
     }
   };
-  const fetchingCategories = async () => {
-    try {
-      const token = localStorage.getItem("authToken");
-      isTokenNull(token);
-      setUser(jwtDecode(token));
-      const res = await instance.get("/categories", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 202) {
-        const allCategoryData = await res.data;
-        setCategoryData(
-          allCategoryData.filter((el) => el.userid === decoded.id)
-        );
-      } else {
-        router.push("/signin");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  transactionData = transactionData.filter((el) => el.userid === user.id);
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    fetchingTransactions(token);
+  }, []);
 
   const counter = useMemo(() => {
     const income = transactionData.filter(
@@ -92,32 +76,38 @@ export default function Dashboard() {
       total +
       income.reduce((acc, cur) => acc + cur.amount, 0) -
       expense.reduce((acc, cur) => acc + cur.amount, 0);
-    console.log(totalAmount);
+    setTotal(totalAmount);
+    setIncome(income.reduce((acc, cur) => acc + cur.amount, 0));
+    setExpense(expense.reduce((acc, cur) => acc + cur.amount, 0));
   }, [transactionData]);
+  const chartDataFetch = async (token) => {
+    try {
+      const decoded = jwtDecode(token);
+      const res = await instance.get("/gettingTransaction", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = res.data;
+      setChartData(data.filter((el) => el.userid === decoded.id));
+    } catch (error) {
+      console.error("error fetching chart data");
+    }
+  };
   useEffect(() => {
-    fetchingCategories();
-    fetchingTransactions();
-  }, []);
-  const [transactionChartData, setTransactionChartData] = useState({
-    labels: transactionData.map((data) => data.transactiontype),
-    datasets: [
-      {
-        label: "Amount",
-        data: transactionData.map((data) => data.amount),
-        backgroundColor: ["#114B5F", "red", "yellow", "brown"],
-      },
-    ],
-  });
-  // const [categoryChartData, setCategoryChartData] = useState({
-  //   labels: transactionData.map((data) => data.categoryname),
-  //   datasets: [
-  //     {
-  //       label: "Amount",
-  //       data: transactionData.map((data) => data.amount),
-  //       backgroundColor: ["#114B5F", "red", "yellow", "brown"],
-  //     },
-  //   ],
-  // });
+    const token = localStorage.getItem("authToken");
+    chartDataFetch(token);
+  }, [chartData]);
+  const transactionChartDataFunc = useMemo(() => {
+    return {
+      labels: chartData ? chartData.map((data) => data.transactiontype) : [],
+      datasets: [
+        {
+          label: "Amount",
+          data: chartData ? chartData.map((data) => data.amount) : [],
+          backgroundColor: ["#114B5F", "red", "yellow", "brown"],
+        },
+      ],
+    };
+  }, [chartData]);
   return (
     <main className="flex flex-col items-center min-h-screen bg-gray-200">
       <Header />
@@ -148,7 +138,9 @@ export default function Dashboard() {
           </div>
           <hr></hr>
           <div className="ml-8 flex flex-col justify-center, mt-8 my-8">
-            <p className="text-3xl font-bold text-green-500">{}</p>
+            <p className="text-3xl font-bold text-green-500">
+              {income && income}
+            </p>
             <p className="text-gray-500 text-lg">Your Income Amount</p>
           </div>
           <div className="flex ml-8">
@@ -163,7 +155,9 @@ export default function Dashboard() {
           </div>
           <hr></hr>
           <div className="ml-8 flex flex-col justify-center, mt-8 my-8">
-            <p className="text-3xl font-bold text-red-500">- {}</p>
+            <p className="text-3xl font-bold text-red-500">
+              - {expense && expense}
+            </p>
             <p className="text-gray-500 text-lg">Your Income Amount</p>
           </div>
           <div className="flex ml-8">
@@ -179,7 +173,7 @@ export default function Dashboard() {
           </div>
           <hr></hr>
           <div className="w-96 h-full">
-            <BarChart chartData={transactionChartData} />
+            <BarChart chartData={transactionChartDataFunc} />
           </div>
         </div>
         <div className="w-5/12 bg-white h-64 rounded-2xl">
@@ -188,7 +182,9 @@ export default function Dashboard() {
             <p className="text-gray-300">Jun 1 - Nov 30</p>
           </div>
           <hr></hr>
-          <div className="w-48 h-48">{/* <PieChart chartData={} /> */}</div>
+          <div className="w-48 h-48 flex">
+            <PieChart chartData={transactionChartDataFunc} />
+          </div>
         </div>
       </div>
       <div className="flex flex-col gap-4 mt-4 w-11/12 bg-white pl-8 rounded-2xl">

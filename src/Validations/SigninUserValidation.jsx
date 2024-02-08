@@ -1,9 +1,10 @@
 import * as yup from "yup";
+const passwordRules = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
 export const signinUserSchema = yup.object().shape({
-  email: yup
+  email: yup.string().email().min(5).max(50).required("Email required!"),
+  password: yup
     .string()
-    .email("Please enter a valid email!")
-    .max(50)
-    .required("Requred!"),
-  password: yup.string().min(4).max(20).required(),
+    .min(4)
+    .matches(passwordRules, { message: "Need a stronger password" })
+    .required("Required"),
 });

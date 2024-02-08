@@ -52,7 +52,7 @@ const profile = () => {
       const token = localStorage.getItem("authToken");
       const source = URL.createObjectURL(src);
       const userId = user.id;
-      console.log(typeof new ArrayBuffer(source));
+      console.log(source);
       const res = await axios.post(
         "http://localhost:8080/upload",
         { source: new ArrayBuffer(source), userId: userId },

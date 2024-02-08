@@ -4,6 +4,8 @@ import { Home } from "@/svgs/Home";
 import { jwtDecode } from "jwt-decode";
 import { useContext } from "react";
 import { VisibleCategoryContext } from "@/context/VisibleCategory";
+import { categorySchema } from "@/Validations/categorySchema";
+import { useFormik } from "formik";
 
 export const Addcategory = () => {
   const router = useRouter();
@@ -11,29 +13,37 @@ export const Addcategory = () => {
     VisibleCategoryContext
   );
   const [categoryimg, setCategoryimg] = useState("");
-  const [name, setName] = useState("");
+  const { values, errors, handleBlur, handleChange, handleSubmit } = useFormik({
+    initialValues: {
+      name: "",
+    },
+    validationSchema: categorySchema,
+  });
   const addingCategory = async () => {
-    try {
-      const token = localStorage.getItem("authToken");
-      const decoded = jwtDecode(token);
-      if (!token) {
-        router.push("/signin");
+    if (errors.name === undefined) {
+      try {
+        setIsCategorybarVisible(false);
+        const token = localStorage.getItem("authToken");
+        const decoded = jwtDecode(token);
+        if (!token) {
+          router.push("/signin");
+        }
+        const newCategory = {
+          categoryimg: categoryimg,
+          name: values.name,
+          userId: decoded.id,
+        };
+        const res = await fetch("http://localhost:8080/category", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newCategory),
+        });
+      } catch (error) {
+        console.error(error);
       }
-      const newCategory = {
-        categoryimg: categoryimg,
-        name: name,
-        userId: decoded.id,
-      };
-      const res = await fetch("http://localhost:8080/category", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newCategory),
-      });
-    } catch (error) {
-      console.error(error);
     }
   };
   return (
@@ -64,15 +74,20 @@ export const Addcategory = () => {
           <option>&#127952;</option>
         </select>
         <input
-          onChange={(e) => setName(e.target.value)}
-          className="rounded-lg w-4/5 border-2 border-solid border-gray-600 h-12 bg-white text-black"
+          id="name"
+          value={values.name}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          className={`rounded-lg w-4/5 border-2 border-solid border-gray-600 h-12 bg-white text-black ${
+            errors.name ? "border-2 border-red-500 border-solid" : null
+          }`}
           placeholder="Name"
         />
       </div>
       <button
         onClick={() => {
           addingCategory();
-          setIsCategorybarVisible(false);
+          handleSubmit();
         }}
         className="w-full bg-green-600 rounded-lg text-white h-12"
       >
