@@ -27,6 +27,9 @@ export default function Dashboard() {
       return router.push("/signin");
     }
   };
+
+  // gettin bank balance
+
   const gettingBankBalance = async (token) => {
     try {
       isTokenNull(token);
@@ -43,6 +46,9 @@ export default function Dashboard() {
     const token = localStorage.getItem("authToken");
     gettingBankBalance(token);
   }, []);
+
+  // getting transactions
+
   const fetchingTransactions = async (token) => {
     try {
       isTokenNull(token);
@@ -53,6 +59,7 @@ export default function Dashboard() {
       });
       if (res.status === 202) {
         setTransactionData(res.data.filter((el) => el.userid === decoded.id));
+        setChartData(res.data.filter((el) => el.userid === decoded.id));
       } else {
         router.push("/signin");
       }
@@ -64,6 +71,8 @@ export default function Dashboard() {
     const token = localStorage.getItem("authToken");
     fetchingTransactions(token);
   }, []);
+
+  // counting
 
   const counter = useMemo(() => {
     const income = transactionData.filter(
@@ -80,22 +89,7 @@ export default function Dashboard() {
     setIncome(income.reduce((acc, cur) => acc + cur.amount, 0));
     setExpense(expense.reduce((acc, cur) => acc + cur.amount, 0));
   }, [transactionData]);
-  const chartDataFetch = async (token) => {
-    try {
-      const decoded = jwtDecode(token);
-      const res = await instance.get("/gettingTransaction", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = res.data;
-      setChartData(data.filter((el) => el.userid === decoded.id));
-    } catch (error) {
-      console.error("error fetching chart data");
-    }
-  };
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    chartDataFetch(token);
-  }, [chartData]);
+
   const transactionChartDataFunc = useMemo(() => {
     return {
       labels: chartData ? chartData.map((data) => data.transactiontype) : [],

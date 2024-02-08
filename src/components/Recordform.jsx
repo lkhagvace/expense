@@ -81,7 +81,6 @@ export const Recordform = () => {
       }
     }
   };
-  console.log(errors);
   return (
     <div className="w-2/5 bg-gray-100 rounded-xl px-4 absolute mx-auto my-auto py-4 m-auto">
       {isCategorybarVisible === true && (

@@ -22,7 +22,6 @@ export default function Records() {
     VisibleCategoryContext
   );
   const [visibleTransactionType, setVisibleTransactionType] = useState("ALL");
-  const [user, setUser] = useState({});
   const [range, setRange] = useState(0);
   const [visibleByCategory, setVisibleByCategory] = useState(true);
   const [hideId, setHideId] = useState("");
@@ -33,19 +32,18 @@ export default function Records() {
       return router.push("/signin");
     }
   };
-  const fetchingTransactions = async () => {
+  const fetchingTransactions = async (token) => {
     try {
-      const token = localStorage.getItem("authToken");
       isTokenNull(token);
       const decoded = jwtDecode(token);
-      setUser(decoded);
-
       const res = await instance.get("/gettingTransaction", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 202) {
         const transactionData = await res.data;
-        setTransactionData(transactionData);
+        setTransactionData(
+          transactionData.filter((el) => el.userid === decoded.id)
+        );
       } else {
         router.push("/signin");
       }
@@ -53,9 +51,12 @@ export default function Records() {
       console.error(error);
     }
   };
-  const fetchingCategories = async () => {
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    fetchingTransactions(token);
+  }, []);
+  const fetchingCategories = async (token) => {
     try {
-      const token = localStorage.getItem("authToken");
       isTokenNull(token);
       const decoded = jwtDecode(token);
       const res = await instance.get("/categories", {
@@ -74,9 +75,14 @@ export default function Records() {
       console.error(error);
     }
   };
-  let data = transactionData.filter((el) => el.userid === user.id);
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    fetchingCategories(token);
+  }, []);
   const filteringByRange = useMemo(() => {
-    data = data.filter((transaction) => transaction.amount <= range);
+    setTransactionData(
+      transactionData.filter((transaction) => transaction.amount <= range)
+    );
   }, [range]);
   const sortByType = useMemo(() => {
     if (visibleTransactionType === "INC") {
@@ -90,21 +96,18 @@ export default function Records() {
       );
     }
   }, [visibleTransactionType]);
-  let visibleCategoryData = categoryData;
   const hideTransaction = useMemo(() => {
     if (visibleByCategory === false) {
       data = data.filter((data) => data.categoryid !== hideId);
     }
   }, [visibleByCategory]);
   const filteringByCategoryName = useMemo(() => {
-    data = data.filter((el) =>
-      el.categoryname.toLowerCase().includes(searchValue)
+    setTransactionData(
+      transactionData.filter((el) =>
+        el.categoryname.toLowerCase().includes(searchValue)
+      )
     );
   }, [searchValue]);
-  useEffect(() => {
-    fetchingCategories();
-    fetchingTransactions();
-  }, []);
   return (
     <main className="flex flex-col items-center min-h-screen bg-gray-200">
       <Header />
@@ -172,7 +175,7 @@ export default function Records() {
               <button className="border-0 bg-white text-gray-400">Clear</button>
             </div>
             <div className="flex flex-col gap-4">
-              {visibleCategoryData.map((category) => {
+              {categoryData.map((category) => {
                 return (
                   <div className="flex gap-4 items-center justify-between">
                     <button
@@ -219,7 +222,7 @@ export default function Records() {
                 onClick={(e) => setRange(Number(e.target.value))}
                 className="w-1/2 h-16 border-[1px] border-solid border-gray-600 rounded-lg"
               >
-                1000000000
+                100,000
               </button>
             </div>
             <div className="flex gap-2">
@@ -227,24 +230,24 @@ export default function Records() {
               <input
                 type="range"
                 min={0}
-                max="1000000000"
+                max="100000"
                 className="range range-info"
                 onChange={(e) => {
                   setRange(Number(e.target.value));
                 }}
               />
-              1000000000
+              100,000
             </div>
           </div>
         </div>
         <div className="flex flex-col w-3/5 mt-8">
           <div className="flex flex-col w-full h-fit mt-0 rounded-lg gap-4">
-            {data.length == 0 ? (
+            {transactionData.length == 0 ? (
               <p className="bg-red-400 h-8 w-64 flex justify-center items-center m-auto text-white rounded-xl">
                 There is no any TRANSACTION !!!
               </p>
             ) : (
-              data.map((transaction) => {
+              transactionData.map((transaction) => {
                 return (
                   <div className="flex w-full justify-between border-solid py-4 px-4 border-2 rounded-lg bg-white items-center m-ato">
                     <div className="flex gap-8 justify-center items-center">

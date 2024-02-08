@@ -1,5 +1,5 @@
 import Link from "next/link";
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { isRecordBarVisibleContext } from "@/context/Visible";
 import axios from "axios";
 import { useRouter } from "next/router";
