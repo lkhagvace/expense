@@ -39,7 +39,7 @@ export default function Dashboard() {
       });
       setTotal(res.data.find((user) => user.id === decoded.id).bankbalance);
     } catch (error) {
-      console.error(error);
+      console.error("error in bank", error);
     }
   };
   useEffect(() => {
@@ -121,7 +121,7 @@ export default function Dashboard() {
                 total < 0 ? "text-red-500" : "text-white"
               } font-semibold`}
             >
-              {total}
+              {total.toLocaleString()}
             </p>
           </div>
         </div>
@@ -133,7 +133,7 @@ export default function Dashboard() {
           <hr></hr>
           <div className="ml-8 flex flex-col justify-center, mt-8 my-8">
             <p className="text-3xl font-bold text-green-500">
-              {income && income}
+              {income && income.toLocaleString()}
             </p>
             <p className="text-gray-500 text-lg">Your Income Amount</p>
           </div>
@@ -150,7 +150,7 @@ export default function Dashboard() {
           <hr></hr>
           <div className="ml-8 flex flex-col justify-center, mt-8 my-8">
             <p className="text-3xl font-bold text-red-500">
-              - {expense && expense}
+              - {expense && expense.toLocaleString()}
             </p>
             <p className="text-gray-500 text-lg">Your Income Amount</p>
           </div>
@@ -211,7 +211,7 @@ export default function Dashboard() {
                         : "text-red-500"
                     }`}
                   >
-                    {transaction.amount}
+                    {transaction.amount.toLocaleString()}
                   </p>
                 </div>
               );

@@ -14,7 +14,7 @@ import { Eyeslash } from "@/svgs/Eyeslash";
 import { instance } from "@/components/Instance";
 export default function Records() {
   const router = useRouter();
-  const [transactionData, setTransactionData] = useState([]);
+  let [transactionData, setTransactionData] = useState([]);
   const { isRecordBarVisible, setIsRecordBarVisible } = useContext(
     isRecordBarVisibleContext
   );
@@ -80,32 +80,32 @@ export default function Records() {
     fetchingCategories(token);
   }, []);
   const filteringByRange = useMemo(() => {
-    setTransactionData(
-      transactionData.filter((transaction) => transaction.amount <= range)
+    transactionData = transactionData.filter(
+      (transaction) => transaction.amount <= range
     );
   }, [range]);
   const sortByType = useMemo(() => {
     if (visibleTransactionType === "INC") {
-      data = data.filter(
+      transactionData = transactionData.filter(
         (transaction) => transaction.transactiontype === visibleTransactionType
       );
     }
     if (visibleTransactionType === "EXP") {
-      data = data.filter(
+      transactionData = transactionData.filter(
         (transaction) => transaction.transactiontype === visibleTransactionType
       );
     }
   }, [visibleTransactionType]);
   const hideTransaction = useMemo(() => {
     if (visibleByCategory === false) {
-      data = data.filter((data) => data.categoryid !== hideId);
+      transactionData = transactionData.filter(
+        (data) => data.categoryid !== hideId
+      );
     }
   }, [visibleByCategory]);
   const filteringByCategoryName = useMemo(() => {
-    setTransactionData(
-      transactionData.filter((el) =>
-        el.categoryname.toLowerCase().includes(searchValue)
-      )
+    transactionData = transactionData.filter((el) =>
+      el.categoryname.toLowerCase().includes(searchValue)
     );
   }, [searchValue]);
   return (
