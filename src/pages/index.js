@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect } from "react";
 
 export default function Home() {
-  console.log("river");
+  console.log("testbranch");
   const router = useRouter();
   const check = async () => {
     try {
