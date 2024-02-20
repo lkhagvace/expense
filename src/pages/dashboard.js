@@ -29,7 +29,6 @@ export default function Dashboard() {
   };
 
   // gettin bank balance
-  console.log("hi git push testing");
 
   const gettingBankBalance = async (token) => {
     try {
